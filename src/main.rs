@@ -38,6 +38,7 @@ async fn search_input() -> State {
 }
 
 async fn search_results(query: String) -> State {
+
     let correct_query = query.to_lowercase().replace(" ", "+").to_string();
     print!("\x1B[2J\x1B[1;1H");
 
@@ -53,6 +54,10 @@ async fn search_results(query: String) -> State {
         titles.push(element.inner_html());
         addresses.push(element.attr("href").unwrap().to_string());
     }
+    if titles.is_empty() {
+        return State::SearchInput
+    }
+
 
 
     let mut child = Command::new("fzf")
@@ -122,7 +127,7 @@ async fn play(url: String, index: usize, indirizzi: Vec<String>) -> State {
         .wait()
         .unwrap();
 
-    State::PostPlay(url, index, indirizzi)
+    State::PostPlay(indirizzi[index].clone(), index, indirizzi)
 }
 
 async fn post_play(mut url:String, index_ep: usize, indirizzi: Vec<String>) -> State {
@@ -139,16 +144,28 @@ async fn post_play(mut url:String, index_ep: usize, indirizzi: Vec<String>) -> S
 
     match scelta.as_str() {
         "Prossimo" => {
-            url = indirizzi[index_ep + 1].clone();
-            State::Playing(url, index_ep + 1, indirizzi)
+            if (index_ep + 1) == indirizzi.len() {
+                println!("{}", index_ep);
+                State::Playing(url, index_ep, indirizzi.clone())
+            } else {
+                println!("{}", index_ep);
+                url = indirizzi[index_ep + 1].clone();
+                State::Playing(url, index_ep + 1, indirizzi)
+            }
+
         },
         "Riguarda" => {
             url = indirizzi[index_ep].clone();
             State::Playing(url, index_ep, indirizzi)
         },
         "Precedente" => {
-            url = indirizzi[index_ep - 1].clone();
-            State::Playing(url, index_ep - 1, indirizzi)
+            if index_ep == 0 {
+                State::Playing(url, index_ep, indirizzi.clone())
+            } else {
+                url = indirizzi[index_ep - 1].clone();
+                State::Playing(url, index_ep - 1, indirizzi)
+            }
+
         },
         "Esci" => std::process::exit(0),
         "Cambia anime" => State::SearchInput,
