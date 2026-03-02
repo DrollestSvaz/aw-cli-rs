@@ -81,7 +81,7 @@ async fn episode_list(anime: String, link: String) -> State {
     let resp = reqwest::get(url).await.unwrap().text().await.unwrap();
     print!("\x1B[2J\x1B[1;1H");
     let doc = Html::parse_document(&resp);
-    let selector = Selector::parse("li.episode a").unwrap();
+    let selector = Selector::parse("div.active ul.episodes li.episode a").unwrap();
     let mut episodes: Vec<String> = Vec::new();
     let mut addresses: Vec<String> = Vec::new();
     for element in doc.select(&selector) {
