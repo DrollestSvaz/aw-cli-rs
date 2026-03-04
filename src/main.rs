@@ -156,6 +156,8 @@ async fn play(url: String, index: usize, indirizzi: Vec<String>) -> State {
 
     Command::new(vlc_path())
         .arg(&video_url)
+        .arg("--width=576")
+        .arg("--height=324")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
