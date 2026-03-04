@@ -18,14 +18,6 @@ async fn main() {
 
     let initial_state = if args.contains(&"--news".to_string()) {
         State::SearchResults(Option::from(None))
-    } else if let Some(i) = args.iter().position(|a| a == "--genre") {
-        match args.get(i + 1) {
-            Some(genre) => State::SearchResults(Option::from(genre.to_string())),
-            None => {
-                eprintln!("Specificare un genere dopo --genre");
-                std::process::exit(1);
-            }
-        }
     } else {
         State::SearchInput
     };
