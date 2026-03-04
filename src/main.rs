@@ -1,11 +1,10 @@
-use text_io::scan;
 use scraper::{ Selector, Html };
 use std::process::{Command, Stdio};
 use std::io::Write;
 use colored::*;
 enum State {
     SearchInput,
-    SearchResults(String),
+    SearchResults(Option<String>),
     EpisodeList(String, String),
     Playing(String, usize, Vec<String>),
     PostPlay(String, usize, Vec<String>),
@@ -13,7 +12,26 @@ enum State {
 
 #[tokio::main]
 async fn main() {
-    let mut state = State::SearchInput;
+
+
+    let args: Vec<String> = std::env::args().collect();
+
+    let initial_state = if args.contains(&"--news".to_string()) {
+        State::SearchResults(Option::from(None))
+    } else if let Some(i) = args.iter().position(|a| a == "--genre") {
+        match args.get(i + 1) {
+            Some(genre) => State::SearchResults(Option::from(genre.to_string())),
+            None => {
+                eprintln!("Specificare un genere dopo --genre");
+                std::process::exit(1);
+            }
+        }
+    } else {
+        State::SearchInput
+    };
+
+
+    let mut state = initial_state;
     print!("\x1B[2J\x1B[1;1H");
 
     loop {
@@ -34,20 +52,30 @@ async fn search_input() -> State {
         .read_line(&mut title) // The read_line function reads data until it reaches a '\n' character
         .expect("Unable to read Stdin"); // In case the read operation fails, it panics with the given message
 
-    State::SearchResults(title.trim().to_string())
+    State::SearchResults(Option::from(title.trim().to_string()))
 }
 
-async fn search_results(query: String) -> State {
+async fn search_results(query: Option<String>) -> State {
 
-    let correct_query = query.to_lowercase().replace(" ", "+").to_string();
+    // let correct_query = query.unwrap().to_lowercase().replace(" ", "+").to_string();
+    let url;
+    if let Some(query) = query.clone() {
+        url = format!("https://www.animeworld.ac/search?keyword={}", query.clone().to_lowercase().replace(" ", "+").to_string())
+    } else {
+        url = "https://www.animeworld.ac".to_string();
+    }
     print!("\x1B[2J\x1B[1;1H");
 
-    let url = format!("https://www.animeworld.ac/search?keyword={}", correct_query);
     println!("{}", "Caricamento...".bold().on_white().truecolor(37, 37, 37));
     let resp = reqwest::get(url).await.unwrap().text().await.unwrap();
     print!("\x1B[2J\x1B[1;1H");
     let doc = Html::parse_document(&resp);
-    let selector = Selector::parse("div.film-list div.item div.inner a.name").unwrap();
+    let selector;
+    if query.is_some() {
+        selector = Selector::parse("div.film-list div.item div.inner a.name").unwrap();
+    } else {
+        selector = Selector::parse("div.content:not(.hidden)[data-name=\"all\"] div.page div.film-list div.item div.inner a.name").unwrap();
+    }
     let mut titles: Vec<String> = Vec::new();
     let mut addresses: Vec<String> = Vec::new();
     for element in doc.select(&selector) {
@@ -72,10 +100,10 @@ async fn search_results(query: String) -> State {
 
     let index = titles.iter().position(|t| t == &scelta).unwrap();
     let indirizzo = addresses[index].clone();
-    State::EpisodeList(query, indirizzo.to_string())
+    State::EpisodeList(query.unwrap_or_default(), indirizzo.to_string())
 }
 
-async fn episode_list(anime: String, link: String) -> State {
+async fn episode_list(_anime: String, link: String) -> State {
     let url = format!("https://www.animeworld.ac{}", link);
     println!("{}", "Caricamento...".bold().on_white().truecolor(37, 37, 37));
     let resp = reqwest::get(url).await.unwrap().text().await.unwrap();
