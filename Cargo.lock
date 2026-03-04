@@ -13,6 +13,7 @@ name = "aw-cli-rs"
 version = "0.1.0"
 dependencies = [
  "colored",
+ "crossterm",
  "inquire",
  "reqwest",
  "scraper",

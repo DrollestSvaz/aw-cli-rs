@@ -2,6 +2,9 @@ use scraper::{ Selector, Html };
 use std::process::{Command, Stdio};
 use std::io::Write;
 use colored::*;
+use crossterm::execute;
+use crossterm::terminal::{Clear, ClearType};
+use crossterm::cursor::MoveTo;
 enum State {
     SearchInput,
     SearchResults(Option<String>),
@@ -37,7 +40,7 @@ async fn main() {
 
 
     let mut state = initial_state;
-    print!("\x1B[2J\x1B[1;1H");
+    execute!(std::io::stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
 
     loop {
         state = match state {
@@ -69,11 +72,11 @@ async fn search_results(query: Option<String>) -> State {
     } else {
         url = "https://www.animeworld.ac".to_string();
     }
-    print!("\x1B[2J\x1B[1;1H");
+    execute!(std::io::stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
 
     println!("{}", "Caricamento...".bold().on_white().truecolor(37, 37, 37));
     let resp = reqwest::get(url).await.unwrap().text().await.unwrap();
-    print!("\x1B[2J\x1B[1;1H");
+    execute!(std::io::stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
     let doc = Html::parse_document(&resp);
     let selector;
     if query.is_some() {
@@ -112,7 +115,7 @@ async fn episode_list(_anime: String, link: String) -> State {
     let url = format!("https://www.animeworld.ac{}", link);
     println!("{}", "Caricamento...".bold().on_white().truecolor(37, 37, 37));
     let resp = reqwest::get(url).await.unwrap().text().await.unwrap();
-    print!("\x1B[2J\x1B[1;1H");
+    execute!(std::io::stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
     let doc = Html::parse_document(&resp);
     let selector = Selector::parse("div.active ul.episodes li.episode a").unwrap();
     let mut episodes: Vec<String> = Vec::new();
@@ -141,7 +144,7 @@ async fn play(url: String, index: usize, indirizzi: Vec<String>) -> State {
     let url = format!("https://www.animeworld.ac{}", url);
     println!("{}", "Caricamento...".bold().on_white().truecolor(37, 37, 37));
     let resp = reqwest::get(url.clone()).await.unwrap().text().await.unwrap();
-    print!("\x1B[2J\x1B[1;1H");
+    execute!(std::io::stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
     let doc = Html::parse_document(&resp);
     let selector = Selector::parse("a#alternativeDownloadLink").unwrap();
     let video_url = doc.select(&selector)
@@ -151,7 +154,7 @@ async fn play(url: String, index: usize, indirizzi: Vec<String>) -> State {
         .unwrap()
         .to_string();
 
-    Command::new("vlc")
+    Command::new(vlc_path())
         .arg(&video_url)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -203,5 +206,13 @@ async fn post_play(mut url:String, index_ep: usize, indirizzi: Vec<String>) -> S
         "Esci" => std::process::exit(0),
         "Cambia anime" => State::SearchInput,
         _ => std::process::exit(0)
+    }
+}
+
+fn vlc_path() -> &'static str {
+    if cfg!(target_os = "windows") {
+        r"C:\Program Files\VideoLAN\VLC\vlc.exe"
+    } else {
+        "vlc"
     }
 }
