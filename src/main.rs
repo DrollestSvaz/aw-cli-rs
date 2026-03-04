@@ -16,8 +16,22 @@ async fn main() {
 
     let args: Vec<String> = std::env::args().collect();
 
-    let initial_state = if args.contains(&"--news".to_string()) {
+    let initial_state = if args.contains(&"--news".to_string()) || args.contains(&"-n".to_string()) {
         State::SearchResults(Option::from(None))
+    } else if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
+        println!("usage: aw-cli-rs [-h] [--news] [--genre GENERE]");
+        println!("Guarda anime dal terminale!");
+        println!();
+        println!("Informazioni:");
+        println!("  -h, --help       mostra questo messaggio");
+        println!();
+        println!("Opzioni:");
+        println!("  --news           mostra gli ultimi anime usciti su AnimeWorld");
+        println!("  --genre GENERE   filtra gli anime per genere (es. --genre Avventura)");
+        std::process::exit(0);
+    } else if args.iter().skip(1).any(|a| a.starts_with('-')) {
+        eprintln!("Argomento non riconosciuto. Usa --help per la lista dei comandi.");
+        std::process::exit(1);
     } else {
         State::SearchInput
     };
