@@ -109,7 +109,7 @@ fn config_creator()  {
             let mut control = false;
             println!("{}", "Inserire percorso assoluto di VLC (NON FARE CONFUSIONE CON IL PERCORSO DEL COLLEGAMENTO):");
             path.clear();
-            std::io::stdin().read_line(&mut path).unwrap();
+            std::io::stdin().read_line(&mut path).unwrap().trim_matches('"').to_string();
             while !control {
 
                 if Path::new(&path.trim()).exists() { control = true; vlc_path = path.trim().trim_matches('"').to_string(); }
