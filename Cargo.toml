@@ -11,3 +11,6 @@ reqwest = "0.13.2"
 scraper = "0.25.0"
 colored = "3.1.1"
 crossterm = "0.29.0"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8.23"
+dirs = "6.0.0"
