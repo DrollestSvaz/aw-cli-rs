@@ -52,6 +52,20 @@ async fn main() {
         println!("Opzioni:");
         println!("  --news           mostra gli ultimi anime usciti su AnimeWorld");
         std::process::exit(0);
+
+    } else if args.contains(&"--remove-config".to_string()) || args.contains(&"-rc".to_string()){
+
+        #[cfg(target_os = "windows")]
+        {
+            remove_config();
+            std::process::exit(0);
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            eprintln!("Comando disponibile solo su Windows.");
+            std::process::exit(1);
+        }
+
     } else if args.iter().skip(1).any(|a| a.starts_with('-')) {
         eprintln!("Argomento non riconosciuto. Usa --help per la lista dei comandi.");
         std::process::exit(1);
@@ -92,12 +106,12 @@ fn config_creator()  {
         std::io::stdin().read_line(&mut path).unwrap();
         if path.to_lowercase().trim().eq("s") {
             let mut control = false;
-            println!("{}", "Inserire percorso assoluto di VLC:");
+            println!("{}", "Inserire percorso assoluto di VLC (NON FARE CONFUSIONE CON IL PERCORSO DEL COLLEGAMENTO):");
             path.clear();
             std::io::stdin().read_line(&mut path).unwrap();
             while !control {
 
-                if Path::new(&path.trim()).exists() { control = true; vlc_path = path.clone(); }
+                if Path::new(&path.trim()).exists() { control = true; vlc_path = path.trim().replace("\"", "").clone(); }
                 else {
                     println!("{}", "Path inserito non esistente!".red().bold());
                     println!("{}", "Reinserire...");
@@ -160,4 +174,9 @@ pub fn vlc_path() -> String {
 #[cfg(not(target_os = "windows"))]
 pub fn vlc_path() -> String {
     "vlc".to_string()
+}
+
+#[cfg(target_os = "windows")]
+fn remove_config() {
+    std::fs::remove_dir_all(dirs::config_dir().unwrap().join("aw-cli-rs")).unwrap();
 }
