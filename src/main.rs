@@ -43,14 +43,15 @@ async fn main() {
     let initial_state = if args.contains(&"--news".to_string()) || args.contains(&"-n".to_string()) {
         State::SearchResults(Option::from(None))
     } else if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
-        println!("usage: aw-cli-rs [-h] [--news]");
+        println!("usage: aw-cli-rs [-h] [--news] [-rc]");
         println!("Guarda anime dal terminale!");
         println!();
         println!("Informazioni:");
         println!("  -h, --help       mostra questo messaggio");
         println!();
         println!("Opzioni:");
-        println!("  --news           mostra gli ultimi anime usciti su AnimeWorld");
+        println!("  --news, -n           | mostra gli ultimi anime usciti su AnimeWorld");
+        println!("  --remove-config, -rc | mostra gli ultimi anime usciti su AnimeWorld");
         std::process::exit(0);
 
     } else if args.contains(&"--remove-config".to_string()) || args.contains(&"-rc".to_string()){
@@ -111,7 +112,7 @@ fn config_creator()  {
             std::io::stdin().read_line(&mut path).unwrap();
             while !control {
 
-                if Path::new(&path.trim()).exists() { control = true; vlc_path = path.trim().replace("\"", "").clone(); }
+                if Path::new(&path.trim()).exists() { control = true; vlc_path = path.trim().trim_matches('"').to_string(); }
                 else {
                     println!("{}", "Path inserito non esistente!".red().bold());
                     println!("{}", "Reinserire...");
